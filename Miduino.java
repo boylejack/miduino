@@ -127,6 +127,7 @@ public class Miduino{
     }
     
     private static int chunkLength(){
+        tracklength = 0;
         tracklength += theFile[inputMarker++] << 24;
         tracklength += theFile[inputMarker++] << 16;
         tracklength += theFile[inputMarker++] << 8;
