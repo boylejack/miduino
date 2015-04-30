@@ -74,15 +74,16 @@ public class Miduino{
 		    else{
 			    //skip the event type, we aren't really interested
 			    inputMarker++;
-		    	    chunkLength = 0;
+		      	chunkLength = 0;
 		   	    return vchunkLength();
-	    	    }
+	    	}
 	    }
 	    else if((eventType & 0xF0) == 0x90){
 		    System.out.println("Note on");
 		    System.out.println("Channel : " + (eventType & 0x0F));
 		    System.out.println("Note : " + (theFile[inputMarker++]));
 		    System.out.println("Velocity : " + (theFile[inputMarker++]));
+            timeSinceLastEvent = 0;
 		    return vtime();
 	    } 
 	    else if((eventType & 0xF0) == 0x80){
@@ -90,6 +91,7 @@ public class Miduino{
 		    System.out.println("Channel : " + (eventType & 0x0F));
 		    System.out.println("Note : " + (theFile[inputMarker++]));
 		    System.out.println("Velocity : " + (theFile[inputMarker++]));
+            timeSinceLastEvent = 0;
 		    return vtime();
 	    } 
 	    else{
@@ -112,7 +114,7 @@ public class Miduino{
     private static int vtimeA(){
 	    System.out.println("At least one more vlq byte to read");
 	    timeSinceLastEvent = timeSinceLastEvent << 7;
-	    timeSinceLastEvent += theFile[inputMarker++] & 0x80;
+	    timeSinceLastEvent += theFile[inputMarker++] & 0x7F;
 	    return vtime();
     }
 
@@ -133,6 +135,7 @@ public class Miduino{
         tracklength += theFile[inputMarker++] << 8;
         tracklength += theFile[inputMarker++] & 0xFF;
         System.out.println("Track length = " + tracklength);
+        timeSinceLastEvent = 0;
         return vtime();
     }
 
