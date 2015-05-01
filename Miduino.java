@@ -2,7 +2,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 import java.io.IOException;
-
+import java.io.PrintWriter;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 /*
     Miduino is a translator from Midi to Arduino code.
     It is designed to be used in conjunction with Jack Boyle's arduino midi
@@ -19,6 +22,30 @@ public class Miduino{
     private static byte fileForm;
     private static short division;
     private static byte[] theFile;
+    private static String arduinoFile;
+    private static String outFilePath;
+    private static PrintWriter writer;
+
+    public static void writeOutFile(){
+        try {
+            File file = new File(outFilePath + ".ino");
+ 
+            // if file doesnt exists, then create it
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+ 
+            FileWriter fw = new FileWriter(file.getAbsoluteFile());
+            BufferedWriter bw = new BufferedWriter(fw);
+            bw.write(arduinoFile);
+            bw.close();
+ 
+            System.out.println("Done");
+ 
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
     
     private static byte[] ReadFile(String fp) throws IOException{
             Path path = Paths.get(fp);
@@ -65,6 +92,8 @@ public class Miduino{
 			    System.out.println("End of current track");
 			    if(numberOfTracks == 0){
 				    System.out.println("End of midi file");
+                    arduinoFile += "\n}";
+                    writeOutFile();
 				    return 0;
 			    }
 			    else{
@@ -79,18 +108,16 @@ public class Miduino{
 	    	}
 	    }
 	    else if((eventType & 0xF0) == 0x90){
-		    System.out.println("Note on");
-		    System.out.println("Channel : " + (eventType & 0x0F));
-		    System.out.println("Note : " + (theFile[inputMarker++]));
-		    System.out.println("Velocity : " + (theFile[inputMarker++]));
+            arduinoFile += "\nSerial.write(0x" + Integer.toHexString(eventType) + ");";
+            arduinoFile += "\nSerial.write(0x" + Integer.toHexString(theFile[inputMarker++]) + ");";
+            arduinoFile += "\nSerial.write(0x" + Integer.toHexString(theFile[inputMarker++]) + ");";
             timeSinceLastEvent = 0;
 		    return vtime();
 	    } 
 	    else if((eventType & 0xF0) == 0x80){
-		    System.out.println("Note off");
-		    System.out.println("Channel : " + (eventType & 0x0F));
-		    System.out.println("Note : " + (theFile[inputMarker++]));
-		    System.out.println("Velocity : " + (theFile[inputMarker++]));
+		    arduinoFile += "\nSerial.write(0x" + Integer.toHexString(eventType) + ");";
+		    arduinoFile += "\nSerial.write(0x" + Integer.toHexString(theFile[inputMarker++]) + ");";
+		    arduinoFile += "\nSerial.write(0x" + Integer.toHexString(theFile[inputMarker++]) + ");";
             timeSinceLastEvent = 0;
 		    return vtime();
 	    } 
@@ -123,7 +150,9 @@ public class Miduino{
     private static int vtimeB(){
 	    timeSinceLastEvent = timeSinceLastEvent << 7;
 	    timeSinceLastEvent += theFile[inputMarker++];
-	    System.out.println("Time since last event : " + timeSinceLastEvent);
+        if(timeSinceLastEvent > 0){
+	       arduinoFile += "\ndelay(" + timeSinceLastEvent + ");";
+       }
 	    return event();
 
     }
@@ -209,11 +238,18 @@ public class Miduino{
 
     }
 
+
     public static void main(String [] args){
         inputMarker = 0;
-	timeSinceLastEvent = 0;
+        timeSinceLastEvent = 0;
         String filePath = args[0];
         System.out.println(filePath);
+        outFilePath = new String(args[1]);
+        arduinoFile = "";
+        arduinoFile += "void setup() {";
+        arduinoFile += "\nSerial.begin(31250);";
+        arduinoFile += "\n)}";
+        arduinoFile +="\nvoid loop(){";
         try{
             theFile = ReadFile(filePath);
             starting();
