@@ -1,0 +1,7 @@
+#!/bin/bash
+cwd=$(pwd)
+
+input="$cwd/$1"
+output="$cwd/$2"
+
+java -cp ~/bin/ Miduino $input $output
