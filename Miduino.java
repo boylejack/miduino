@@ -248,7 +248,7 @@ public class Miduino{
         arduinoFile = "";
         arduinoFile += "void setup() {";
         arduinoFile += "\nSerial.begin(31250);";
-        arduinoFile += "\n)}";
+        arduinoFile += "\n}";
         arduinoFile +="\nvoid loop(){";
         try{
             theFile = ReadFile(filePath);
