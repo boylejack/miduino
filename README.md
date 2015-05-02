@@ -9,7 +9,7 @@ It takes a midi file (single track/instrument for now) and converts it in to an 
 4. All done!
 
 ## Usage
-A little helper script should have been saved to you ~/bin directory so all you need to do to run miduino is:
+A little helper script should have been saved to your ~/bin directory so all you need to do to run miduino is:
 
 1. Navigate to the directory where you have your MIDI file to be converted
 2. Run `miduino fileName.mid outputName`
