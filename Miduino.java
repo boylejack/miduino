@@ -11,7 +11,6 @@ import java.io.FileWriter;
     It is designed to be used in conjunction with Jack Boyle's arduino midi
     sequencer project. An instructable for said project can be found at ____
     Miduino is released under the ____ licence.
-
 */
 public class Miduino{
     private static int inputMarker;
@@ -19,6 +18,7 @@ public class Miduino{
     private static int timeSinceLastEvent;
     private static int numberOfTracks;
     private static int tracklength;
+    private static int previousEventType;
     private static byte fileForm;
     private static short division;
     private static byte[] theFile;
@@ -29,24 +29,24 @@ public class Miduino{
     public static void writeOutFile(){
         try {
             File file = new File(outFilePath + ".ino");
- 
+
             // if file doesnt exists, then create it
             if (!file.exists()) {
                 file.createNewFile();
             }
- 
+
             FileWriter fw = new FileWriter(file.getAbsoluteFile());
             BufferedWriter bw = new BufferedWriter(fw);
             bw.write(arduinoFile);
             bw.close();
- 
+
             System.out.println("Done");
- 
+
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-    
+
     private static byte[] ReadFile(String fp) throws IOException{
             Path path = Paths.get(fp);
             byte[] data = Files.readAllBytes(path);
@@ -83,7 +83,19 @@ public class Miduino{
 
     private static int event(){
 	    int eventType = theFile[inputMarker++] & 0xFF;
-	    if(eventType == 0xFF){
+        //here we determine whether we have a case of Running Status
+        if(eventType < 0x80){
+            eventType = previousEventType;
+            //adjust the input marker to account for the missing status byte
+            inputMarker--;
+
+        }
+        else{
+            //store the event type in case of running status later
+            previousEventType = eventType;
+        }
+
+        if(eventType == 0xFF){
 		    System.out.println("Meta Event");
 		    if(theFile[inputMarker] == 0x2f){
 			    inputMarker += 2;
@@ -107,20 +119,46 @@ public class Miduino{
 		   	    return vchunkLength();
 	    	}
 	    }
+
+        else if(eventType == 0xF0){
+            System.out.println("Sys Ex Event");
+            while((theFile[inputMarker] & 0xFF) != 0xF7){
+                inputMarker++;
+                System.out.println("Finding end of Sys Ex");
+            }
+            inputMarker++;
+            timeSinceLastEvent = 0;
+            return vtime();
+        }
+
 	    else if((eventType & 0xF0) == 0x90){
+            System.out.println("Note On Event");
             arduinoFile += "\nSerial.write(0x" + Integer.toHexString(eventType) + ");";
             arduinoFile += "\nSerial.write(0x" + Integer.toHexString(theFile[inputMarker++]) + ");";
             arduinoFile += "\nSerial.write(0x" + Integer.toHexString(theFile[inputMarker++]) + ");";
             timeSinceLastEvent = 0;
 		    return vtime();
-	    } 
+	    }
 	    else if((eventType & 0xF0) == 0x80){
+            System.out.println("Note Off Event");
 		    arduinoFile += "\nSerial.write(0x" + Integer.toHexString(eventType) + ");";
 		    arduinoFile += "\nSerial.write(0x" + Integer.toHexString(theFile[inputMarker++]) + ");";
 		    arduinoFile += "\nSerial.write(0x" + Integer.toHexString(theFile[inputMarker++]) + ");";
             timeSinceLastEvent = 0;
 		    return vtime();
-	    } 
+	    }
+        else if(((eventType & 0xF0) == 0xA0) || ((eventType & 0xF0) == 0xB0) ||((eventType & 0xF0) == 0xE0) ){
+            System.out.println("Control Event");
+            inputMarker += 2;
+            timeSinceLastEvent = 0;
+            return vtime();
+        }
+        else if(((eventType & 0xF0) == 0xC0) || ((eventType & 0xF0) == 0xD0)){
+            System.out.println("Control Event");
+            inputMarker++;
+            timeSinceLastEvent = 0;
+            return vtime();
+        }
 	    else{
 		    return 0;
 	    }
@@ -156,7 +194,7 @@ public class Miduino{
 	    return event();
 
     }
-    
+
     private static int chunkLength(){
         tracklength = 0;
         tracklength += theFile[inputMarker++] << 24;
@@ -226,7 +264,7 @@ public class Miduino{
         String header = new String(theFile, inputMarker, 4);
         if(header.compareTo("MThd") == 0){
             System.out.println("This is a midi file");
-            //we skip the 0006 part of the midi header, this is always the same 
+            //we skip the 0006 part of the midi header, this is always the same
 	    //we also skip the first byte of the form bytes.
             inputMarker += 9;
             return form();
