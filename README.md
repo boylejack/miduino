@@ -19,4 +19,4 @@ A little helper script should have been saved to your ~/bin directory so all you
 Where fileName.mid is the MIDI file you want to convert and outputName is the name you want for your .ino file. Don't add the .ino extension.
 
 ## Future Features
-In the future I intend to implement new features including support for multitrack/instrument MIDI files. A tempo setting/command line argument is in the works and should be released very soon. 
+A tempo setting/command line argument is in the works and should be released very soon. 
