@@ -55,70 +55,67 @@ public class Miduino{
 
 
     private static int vchunkLength(){
-	    if(theFile[inputMarker] <= 0x7F && theFile[inputMarker] >= 0){
-		    return vchunkB();
-	    }
-	    else{
-		    return vchunkA();
-	    }
+        if(theFile[inputMarker] <= 0x7F && theFile[inputMarker] >= 0){
+            return vchunkB();
+        }
+        else{
+            return vchunkA();
+        }
     }
 
     //This is not the last byte in the variable length quantity
     private static int vchunkA(){
-	    System.out.println("At least one more vlq byte to read");
-	    chunkLength = chunkLength << 7;
-	    chunkLength += theFile[inputMarker++] & 0x80;
-	    return vchunkLength();
+        System.out.println("At least one more vlq byte to read");
+        chunkLength = chunkLength << 7;
+        chunkLength += theFile[inputMarker++] & 0x80;
+        return vchunkLength();
     }
 
     //This is the last byte in the variable length quantity
     private static int vchunkB(){
-	    chunkLength = chunkLength << 7;
-	    chunkLength += theFile[inputMarker++];
-	    inputMarker += chunkLength;
-	    System.out.println("Length of meta event : " + chunkLength);
-	    return vtime();
-
+        chunkLength = chunkLength << 7;
+        chunkLength += theFile[inputMarker++];
+        inputMarker += chunkLength;
+        System.out.println("Length of meta event : " + chunkLength);
+        return vtime();
     }
 
     private static int event(){
-	    int eventType = theFile[inputMarker++] & 0xFF;
+        int eventType = theFile[inputMarker++] & 0xFF;
         //here we determine whether we have a case of Running Status
         if(eventType < 0x80){
             eventType = previousEventType;
             //adjust the input marker to account for the missing status byte
             inputMarker--;
-
         }
         else{
             //store the event type in case of running status later
             previousEventType = eventType;
         }
-
         if(eventType == 0xFF){
-		    System.out.println("Meta Event");
-		    if(theFile[inputMarker] == 0x2f){
-			    inputMarker += 2;
-			    numberOfTracks -= 1;
-			    //go to next track
-			    System.out.println("End of current track");
-			    if(numberOfTracks == 0){
-				    System.out.println("End of midi file");
+            System.out.println("Meta Event");
+            if(theFile[inputMarker] == 0x2f){
+                inputMarker += 2;
+                numberOfTracks -= 1;
+                //go to next track
+                System.out.println("End of current track");
+                if(numberOfTracks == 0){
+                    System.out.println("End of midi file");
                     arduinoFile += "\n}";
                     writeOutFile();
-				    return 0;
-			    }
-			    else{
-			    	return midiTrack();
-			    }
-		    }
-		    else{
-			    //skip the event type, we aren't really interested
-			    inputMarker++;
-		      	chunkLength = 0;
-		   	    return vchunkLength();
-	    	}
-	    }
+                    return 0;
+                }
+                else{
+                    return midiTrack();
+                }
+            }
+            else{
+                //skip the event type, we aren't really interested
+                inputMarker++;
+                chunkLength = 0;
+                return vchunkLength();
+            }
+        }
 
         else if(eventType == 0xF0){
             System.out.println("Sys Ex Event");
@@ -131,22 +128,22 @@ public class Miduino{
             return vtime();
         }
 
-	    else if((eventType & 0xF0) == 0x90){
+        else if((eventType & 0xF0) == 0x90){
             System.out.println("Note On Event");
             arduinoFile += "\nSerial.write(0x" + Integer.toHexString(eventType) + ");";
             arduinoFile += "\nSerial.write(0x" + Integer.toHexString(theFile[inputMarker++]) + ");";
             arduinoFile += "\nSerial.write(0x" + Integer.toHexString(theFile[inputMarker++]) + ");";
             timeSinceLastEvent = 0;
-		    return vtime();
-	    }
-	    else if((eventType & 0xF0) == 0x80){
+            return vtime();
+        }
+        else if((eventType & 0xF0) == 0x80){
             System.out.println("Note Off Event");
-		    arduinoFile += "\nSerial.write(0x" + Integer.toHexString(eventType) + ");";
-		    arduinoFile += "\nSerial.write(0x" + Integer.toHexString(theFile[inputMarker++]) + ");";
-		    arduinoFile += "\nSerial.write(0x" + Integer.toHexString(theFile[inputMarker++]) + ");";
+            arduinoFile += "\nSerial.write(0x" + Integer.toHexString(eventType) + ");";
+            arduinoFile += "\nSerial.write(0x" + Integer.toHexString(theFile[inputMarker++]) + ");";
+            arduinoFile += "\nSerial.write(0x" + Integer.toHexString(theFile[inputMarker++]) + ");";
             timeSinceLastEvent = 0;
-		    return vtime();
-	    }
+            return vtime();
+        }
         else if(((eventType & 0xF0) == 0xA0) || ((eventType & 0xF0) == 0xB0) ||((eventType & 0xF0) == 0xE0) ){
             System.out.println("Control Event");
             inputMarker += 2;
@@ -159,40 +156,39 @@ public class Miduino{
             timeSinceLastEvent = 0;
             return vtime();
         }
-	    else{
-		    return 0;
-	    }
+        else{
+            return 0;
+        }
 
     }
 
     private static int vtime(){
-	    if(theFile[inputMarker] <= 0x7F && theFile[inputMarker] >= 0){
-		    return vtimeB();
-	    }
-	    else{
-		    return vtimeA();
-	    }
+        if(theFile[inputMarker] <= 0x7F && theFile[inputMarker] >= 0){
+            return vtimeB();
+        }
+        else{
+            return vtimeA();
+        }
     }
 
     //vtimeA represents a value >= 0x80
     //This is not the last byte in the variable length quantity
     private static int vtimeA(){
-	    System.out.println("At least one more vlq byte to read");
-	    timeSinceLastEvent = timeSinceLastEvent << 7;
-	    timeSinceLastEvent += theFile[inputMarker++] & 0x7F;
-	    return vtime();
+        System.out.println("At least one more vlq byte to read");
+        timeSinceLastEvent = timeSinceLastEvent << 7;
+        timeSinceLastEvent += theFile[inputMarker++] & 0x7F;
+        return vtime();
     }
 
     //vtimeB represents a value < 0x80
     //This is the last byte in the variable length quantity
     private static int vtimeB(){
-	    timeSinceLastEvent = timeSinceLastEvent << 7;
-	    timeSinceLastEvent += theFile[inputMarker++];
+        timeSinceLastEvent = timeSinceLastEvent << 7;
+        timeSinceLastEvent += theFile[inputMarker++];
         if(timeSinceLastEvent > 0){
-	       arduinoFile += "\ndelay(" + timeSinceLastEvent + ");";
+           arduinoFile += "\ndelay(" + timeSinceLastEvent + ");";
        }
-	    return event();
-
+        return event();
     }
 
     private static int chunkLength(){
@@ -233,7 +229,6 @@ public class Miduino{
         numberOfTracks += theFile[inputMarker++];
         System.out.println("Number of tracks = " + numberOfTracks);
         return timeDiv();
-
     }
 
     public static int form(){
@@ -257,7 +252,6 @@ public class Miduino{
             default:
                 return -1;
         }
-
     }
 
     public static int starting(){
@@ -265,15 +259,13 @@ public class Miduino{
         if(header.compareTo("MThd") == 0){
             System.out.println("This is a midi file");
             //we skip the 0006 part of the midi header, this is always the same
-	    //we also skip the first byte of the form bytes.
+        //we also skip the first byte of the form bytes.
             inputMarker += 9;
             return form();
         }
         else{
             return -1;
         }
-
-
     }
 
 
