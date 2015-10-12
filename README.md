@@ -1,6 +1,6 @@
 # miduino v1.0
 A MIDI to Arduino translator/compiler in the form of a small java command line utility for linux. To be used with the MIDI sequencer project found here : http://www.arduino.cc/en/Tutorial/Midi
-It takes a midi file (single track/instrument for now) and converts it in to an arduino program. Version 1.0 has been tested with files from freemidi.org
+It takes a midi file and converts it in to an arduino program. Version 1.0 has been tested with files from freemidi.org
 
 ## Instalation
 1. Clone this repo
