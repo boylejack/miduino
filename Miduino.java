@@ -130,17 +130,13 @@ public class Miduino{
 
         else if((eventType & 0xF0) == 0x90){
             System.out.println("Note On Event");
-            arduinoFile += "\nSerial.write(0x" + Integer.toHexString(eventType) + ");";
-            arduinoFile += "\nSerial.write(0x" + Integer.toHexString(theFile[inputMarker++]) + ");";
-            arduinoFile += "\nSerial.write(0x" + Integer.toHexString(theFile[inputMarker++]) + ");";
+            arduinoFile += "\nSerial.write(0x" + Integer.toHexString(eventType) + Integer.toHexString(theFile[inputMarker++]) + Integer.toHexString(theFile[inputMarker++]) + ");";
             timeSinceLastEvent = 0;
             return vtime();
         }
         else if((eventType & 0xF0) == 0x80){
             System.out.println("Note Off Event");
-            arduinoFile += "\nSerial.write(0x" + Integer.toHexString(eventType) + ");";
-            arduinoFile += "\nSerial.write(0x" + Integer.toHexString(theFile[inputMarker++]) + ");";
-            arduinoFile += "\nSerial.write(0x" + Integer.toHexString(theFile[inputMarker++]) + ");";
+            arduinoFile += "\nSerial.write(0x" + Integer.toHexString(eventType) + Integer.toHexString(theFile[inputMarker++]) + Integer.toHexString(theFile[inputMarker++]) + ");";
             timeSinceLastEvent = 0;
             return vtime();
         }
